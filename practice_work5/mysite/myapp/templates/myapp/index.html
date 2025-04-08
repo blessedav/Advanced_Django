@@ -1,0 +1,172 @@
+{% extends 'myapp/base.html' %}
+
+{% load static %}
+
+{% block body %}
+<form class="shadow-lg m-10 rounded-lg bg-white p-10 space-y-6" method="post">
+    {% csrf_token %}
+    <h2 class="text-2xl font-semibold mb-5 text-gray-700">Add Expense</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div>
+            <label class="block text-gray-600">Expense name</label>
+            <div class="border p-2 rounded">
+                {{ expense_form.name }}
+            </div>
+        </div>
+        <div>
+            <label class="block text-gray-600">Amount</label>
+            <div class="border p-2 rounded">
+                {{ expense_form.amount }}
+            </div>
+        </div>
+        <div>
+            <label class="block text-gray-600">Category</label>
+            <div class="border p-2 rounded">
+                {{ expense_form.category }}
+            </div>
+        </div>
+    </div>
+    <div class="pt-6">
+        <button class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg text-white font-bold shadow">
+            ➕ Add Expense
+        </button>
+    </div>
+</form>
+
+<div class="shadow-lg m-10 rounded-lg bg-white p-6">
+    <h3 class="text-xl font-semibold mb-4 text-gray-700">Filter Expenses</h3>
+    <form method="get" class="space-y-4">
+        {{ expense_filter.form.as_p }}
+        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold px-4 py-2 rounded">Apply Filter</button>
+    </form>
+</div>
+
+<div class="shadow-lg m-10 rounded-lg bg-white overflow-x-auto">
+    <div class="grid grid-cols-6 font-bold bg-gray-100 text-gray-700 py-3 px-5">
+        <span>Name</span>
+        <span>Amount</span>
+        <span>Category</span>
+        <span>Date</span>
+        <span>Edit</span>
+        <span>Delete</span>
+    </div>
+    {% for expense in expenses %}
+    <div class="grid grid-cols-6 items-center py-4 px-5 {% cycle 'bg-white' 'bg-gray-50' %}">
+        <span>{{ expense.name }}</span>
+        <span>{{ expense.amount }}</span>
+        <span>{{ expense.category }}</span>
+        <span>{{ expense.date }}</span>
+        <span>
+            <a href="{% url 'edit' expense.id %}">
+                <img class="h-6" src="{% static 'myapp/images/edit.png' %}" alt="Edit">
+            </a>
+        </span>
+        <span>
+            <form method="post" action="{% url 'delete' expense.id %}">
+                {% csrf_token %}
+                <button type="submit" name="delete">
+                    <img class="h-6" src="{% static 'myapp/images/delete.png' %}" alt="Delete">
+                </button>
+            </form>
+        </span>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 m-10">
+    <div class="shadow-lg p-6 rounded-lg bg-white text-center">
+        <h1 class="text-gray-500 font-semibold">Last 365 days</h1>
+        <p class="text-2xl text-green-600 font-bold mt-2">{{ yearly_sum.amount__sum }}</p>
+    </div>
+    <div class="shadow-lg p-6 rounded-lg bg-white text-center">
+        <h1 class="text-gray-500 font-semibold">Last 30 days</h1>
+        <p class="text-2xl text-green-600 font-bold mt-2">{{ monthly_sum.amount__sum }}</p>
+    </div>
+    <div class="shadow-lg p-6 rounded-lg bg-white text-center">
+        <h1 class="text-gray-500 font-semibold">Last 7 days</h1>
+        <p class="text-2xl text-green-600 font-bold mt-2">{{ weekly_sum.amount__sum }}</p>
+    </div>
+</div>
+
+<!-- Графики -->
+<div class="flex flex-col lg:flex-row gap-10 m-10">
+    <div class="w-full lg:w-1/2 shadow-lg bg-white p-6 rounded-lg">
+        <h2 class="text-lg font-semibold mb-4">Expense spread across categories</h2>
+        <canvas id="myChart"></canvas>
+    </div>
+    <div class="w-full lg:w-1/2 shadow-lg bg-white p-6 rounded-lg">
+        <h2 class="text-lg font-semibold mb-4">Daily Expense Sum</h2>
+        <canvas id="myChart1"></canvas>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.0.2/dist/chart.min.js"></script>
+<script>
+    const cats = [], cat_sums = [], dates = [], sums = [];
+
+    const catSumDiv = document.getElementById('categorical-table')?.getElementsByTagName('div') || [];
+    for (let i = 0; i < catSumDiv.length; i++) {
+        (i % 2 ? cat_sums : cats).push(catSumDiv[i].innerText.replace("$", ""));
+    }
+
+    const dailySumDiv = document.getElementById('30-day-table')?.getElementsByTagName('div') || [];
+    for (let i = 0; i < dailySumDiv.length; i++) {
+        (i % 2 ? sums : dates).push(dailySumDiv[i].innerText.replace("$", ""));
+    }
+
+    new Chart(document.getElementById('myChart'), {
+        type: 'pie',
+        data: {
+            labels: cats,
+            datasets: [{
+                label: 'Expense across categories',
+                data: cat_sums,
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(255, 206, 86, 0.2)',
+                    'rgba(75, 192, 192, 0.2)',
+                    'rgba(153, 102, 255, 0.2)',
+                    'rgba(255, 159, 64, 0.2)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+
+    new Chart(document.getElementById('myChart1'), {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: 'Sum of daily expenses',
+                data: sums,
+                fill: false,
+                borderColor: 'rgba(75, 192, 192, 1)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
