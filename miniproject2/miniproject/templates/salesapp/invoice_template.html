@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Invoice {{ order.invoice.invoice_number }}</title>
+    <style>
+      :root {
+        --primary-color: #2563eb;
+        --secondary-color: #1e40af;
+        --text-color: #1f2937;
+        --border-color: #e5e7eb;
+        --background-color: #f9fafb;
+      }
+
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        margin: 0;
+        padding: 40px;
+        color: var(--text-color);
+        background-color: var(--background-color);
+        line-height: 1.5;
+      }
+
+      .invoice-container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 40px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid var(--border-color);
+      }
+
+      .header h1 {
+        color: var(--primary-color);
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        font-weight: 700;
+      }
+
+      .invoice-number {
+        font-size: 1.25rem;
+        color: var(--secondary-color);
+        margin: 10px 0;
+      }
+
+      .invoice-date {
+        color: #6b7280;
+        font-size: 1rem;
+      }
+
+      .invoice-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+        padding: 20px;
+        background-color: var(--background-color);
+        border-radius: 8px;
+      }
+
+      .detail-item {
+        margin-bottom: 10px;
+      }
+
+      .detail-item strong {
+        color: var(--secondary-color);
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin-bottom: 30px;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      th {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 12px 15px;
+        text-align: left;
+        font-weight: 600;
+      }
+
+      td {
+        padding: 12px 15px;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      tr:last-child td {
+        border-bottom: none;
+      }
+
+      tr:hover {
+        background-color: var(--background-color);
+      }
+
+      .total {
+        background-color: var(--background-color);
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 30px;
+      }
+
+      .total p {
+        display: flex;
+        justify-content: space-between;
+        margin: 10px 0;
+        font-size: 1.1rem;
+      }
+
+      .total p:last-child {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 2px solid var(--border-color);
+      }
+
+      @media print {
+        body {
+          background: white;
+          padding: 0;
+        }
+        
+        .invoice-container {
+          box-shadow: none;
+          padding: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="invoice-container">
+      <div class="header">
+        <h1>INVOICE</h1>
+        <div class="invoice-number">Invoice #: {{ order.invoice.invoice_number }}</div>
+        <div class="invoice-date">Date: {{ order.invoice.generated_at|date:"F d, Y" }}</div>
+      </div>
+
+      <div class="invoice-details">
+        <div class="detail-item">
+          <strong>Customer</strong>
+          {{ order.customer.get_full_name }}
+        </div>
+        <div class="detail-item">
+          <strong>Email</strong>
+          {{ order.customer.email }}
+        </div>
+        <div class="detail-item">
+          <strong>Due Date</strong>
+          {{ order.invoice.due_date|date:"F d, Y" }}
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Unit Price</th>
+            <th>Discount</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in order.items.all %}
+          <tr>
+            <td>{{ item.product.name }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>${{ item.unit_price }}</td>
+            <td>${{ item.discount_amount }}</td>
+            <td>${{ item.final_price }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="total">
+        <p>
+          <span>Subtotal:</span>
+          <span>${{ order.total_amount }}</span>
+        </p>
+        <p>
+          <span>Discount:</span>
+          <span>${{ order.discount_amount }}</span>
+        </p>
+        <p>
+          <span>Total:</span>
+          <span>${{ order.final_amount }}</span>
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
